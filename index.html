@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Drisssa Fun</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#0f172a;
+color:white;
+}
+
+header{
+background:#111827;
+padding:15px;
+text-align:center;
+font-size:25px;
+font-weight:bold;
+color:#38bdf8;
+}
+
+.container{
+padding:20px;
+}
+
+.card{
+background:#1e293b;
+padding:20px;
+border-radius:15px;
+margin-top:20px;
+}
+
+input{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:10px;
+}
+
+button{
+width:100%;
+padding:12px;
+margin-top:15px;
+border:none;
+border-radius:10px;
+background:#38bdf8;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.video{
+margin-top:15px;
+background:black;
+padding:10px;
+border-radius:10px;
+}
+
+.hidden{
+display:none;
+}
+
+img{
+width:100%;
+border-radius:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+DRISSA FUN
+</header>
+
+<div class="container">
+
+<div class="card" id="loginBox">
+
+<h2>Connexion</h2>
+
+<input type="text" id="username" placeholder="Nom utilisateur">
+
+<input type="password" id="password" placeholder="Mot de passe">
+
+<button onclick="login()">
+Se connecter
+</button>
+
+</div>
+
+<div class="card hidden" id="homeBox">
+
+<h2 id="welcome"></h2>
+
+<p>
+Bienvenue sur le site de divertissement.
+</p>
+
+<div class="video">
+
+<img src="https://picsum.photos/500/300">
+
+<h3>Vidéo tendance</h3>
+
+<p>
+Contenu fun et divertissement.
+</p>
+
+</div>
+
+<div class="video">
+
+<img src="https://picsum.photos/500/301">
+
+<h3>Anime populaire</h3>
+
+<p>
+Découvre les meilleurs moments anime.
+</p>
+
+</div>
+
+<button onclick="logout()">
+Déconnexion
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+function login(){
+
+let username =
+document.getElementById("username").value;
+
+let password =
+document.getElementById("password").value;
+
+if(username == "" || password == ""){
+
+alert("Remplis les champs");
+
+}else{
+
+localStorage.setItem("user", username);
+
+document.getElementById("loginBox")
+.classList.add("hidden");
+
+document.getElementById("homeBox")
+.classList.remove("hidden");
+
+document.getElementById("welcome")
+.innerHTML = "Salut " + username;
+
+}
+
+}
+
+function logout(){
+
+localStorage.removeItem("user");
+
+location.reload();
+
+}
+
+window.onload = function(){
+
+let savedUser =
+localStorage.getItem("user");
+
+if(savedUser){
+
+document.getElementById("loginBox")
+.classList.add("hidden");
+
+document.getElementById("homeBox")
+.classList.remove("hidden");
+
+document.getElementById("welcome")
+.innerHTML = "Salut " + savedUser;
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
