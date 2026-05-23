@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eFootball Live Platform</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card: #131a2a;
+      --accent: #00e5ff;
+      --accent-hover: #00b8d4;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --success: #2ea043;
+      --danger: #f85149;
+      --warning: #d29922;
+      --radius: 12px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); line-height: 1.5; min-height: 100vh; display: flex; flex-direction: column; }
+    
+    /* Navigation */
+    nav { background: rgba(19,26,42,0.95); backdrop-filter: blur(10px); padding: 12px 16px; position: sticky; top: 0; z-index: 50; border-bottom: 1px solid #2d3748; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 1.25rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+    .logo span { background: var(--accent); color: var(--bg); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; }
+    .nav-links { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0; }
+    .nav-btn { background: transparent; border: none; color: var(--muted); padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: 0.2s; font-size: 0.9rem; }
+    .nav-btn:hover, .nav-btn.active { background: #1c2538; color: var(--text); }
+    .auth-btn { background: var(--accent); color: #000; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .auth-btn:hover { background: var(--accent-hover); }
+
+    /* Layout */
+    main { flex: 1; padding: 16px; max-width: 900px; margin: 0 auto; width: 100%; }
+    .section { display: none; animation: fade 0.3s ease; }
+    .section.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    h2 { font-size: 1.5rem; margin-bottom: 16px; border-left: 4px solid var(--accent); padding-left: 10px; }
+    
+    /* Cards */
+    .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin-bottom: 20px; }
+    .card { background: var(--card); padding: 16px; border-radius: var(--radius); border: 1px solid #2d3748; box-shadow: var(--shadow); }
+    .stat-val { font-size: 2rem; font-weight: 700; color: var(--accent); }
+    .stat-label { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+
+    /* Lists */
+    .list-item { background: var(--card); padding: 12px; border-radius: var(--radius); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #2d3748; }
+    .tag { padding: 4px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }    .tag.open { background: #1a3a2a; color: var(--success); }
+    .tag.closed { background: #2d1a1a; color: var(--danger); }
+    .status-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 6px var(--success); }
+
+    /* Buttons & Forms */
+    .btn { background: var(--accent); color: #000; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+    .btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn.secondary { background: #1c2538; color: var(--text); border: 1px solid #2d3748; }
+    .btn.secondary:hover { background: #253044; }
+    .btn.danger { background: var(--danger); color: white; }
+    
+    .code-box { background: #0f141f; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 1.2rem; text-align: center; letter-spacing: 2px; border: 1px dashed var(--accent); margin: 12px 0; }
+    
+    input, select { width: 100%; padding: 10px; background: #0f141f; border: 1px solid #2d3748; border-radius: 8px; color: var(--text); margin-bottom: 10px; }
+    label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 0.85rem; }
+
+    /* Modal */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(4px); }
+    .modal.open { display: flex; }
+    .modal-content { background: var(--card); padding: 20px; border-radius: var(--radius); width: 90%; max-width: 400px; border: 1px solid #2d3748; box-shadow: var(--shadow); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .close-modal { background: transparent; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
+
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; padding: 10px 16px; border-radius: 8px; opacity: 0; transition: 0.3s; z-index: 200; }
+    .toast.show { opacity: 1; bottom: 40px; }
+
+    footer { text-align: center; padding: 16px; color: var(--muted); font-size: 0.8rem; border-top: 1px solid #2d3748; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="logo">⚽ eFootball Live <span>MVP</span></div>
+    <div class="nav-links" id="navLinks">
+      <button class="nav-btn active" data-target="dashboard">📊 Stats</button>
+      <button class="nav-btn" data-target="tournaments">🏆 Tournois</button>
+      <button class="nav-btn" data-target="online">👥 En Ligne</button>
+      <button class="nav-btn" data-target="play">🎮 Jouer</button>
+    </div>
+    <button id="authBtn" class="auth-btn">Connexion Google</button>
+  </nav>
+
+  <main>
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="section active">
+      <h2>📊 Mon Profil & Stats</h2>
+      <div id="userGreeting" style="margin-bottom:16px; color:var(--muted);">Connectez-vous pour voir vos stats</div>
+      <div class="grid" id="statsGrid">
+        <div class="card"><div class="stat-val" id="wins">0</div><div class="stat-label">Victoires</div></div>
+        <div class="card"><div class="stat-val" id="losses">0</div><div class="stat-label">Défaites</div></div>        <div class="card"><div class="stat-val" id="draws">0</div><div class="stat-label">Nuls</div></div>
+        <div class="card"><div class="stat-val" id="matches">0</div><div class="stat-label">Matchs joués</div></div>
+      </div>
+      <button class="btn secondary" id="resetStats">🔄 Réinitialiser (test)</button>
+    </section>
+
+    <!-- TOURNAMENTS -->
+    <section id="tournaments" class="section">
+      <h2>🏆 Tournois Disponibles</h2>
+      <div id="tournamentList">
+        <!-- Injecté via JS -->
+      </div>
+    </section>
+
+    <!-- ONLINE PLAYERS -->
+    <section id="online" class="section">
+      <h2>👥 Joueurs en Ligne</h2>
+      <div id="playersList">
+        <!-- Injecté via JS -->
+      </div>
+    </section>
+
+    <!-- PLAY / CHALLENGE -->
+    <section id="play" class="section">
+      <h2>🎮 Lancer un Match</h2>
+      <div class="card" style="text-align:center; padding: 24px;">
+        <p style="margin-bottom:12px; color:var(--muted);">Génère un code de room à partager avec ton adversaire.</p>
+        <button class="btn" id="generateCode">🔑 Générer un Code</button>
+        <div id="codeDisplay" class="code-box" style="display:none;"></div>
+        <p id="copyStatus" style="color:var(--success); font-size:0.85rem; height:20px;"></p>
+        <div style="margin-top:16px; text-align:left; background:#0f141f; padding:12px; border-radius:8px; font-size:0.9rem;">
+          <strong>📱 Instructions :</strong><br>
+          1. Copie le code<br>
+          2. Ouvre eFootball → Multijoueur → Code de Room<br>
+          3. Saisis le code → Lance le match<br>
+          4. Après le match, déclare le résultat ci-dessous 👇
+        </div>
+      </div>
+
+      <h2 style="margin-top:24px;">📝 Déclarer un Résultat</h2>
+      <div class="card">
+        <label>Adversaire</label>
+        <input type="text" id="oppName" placeholder="Pseudo de l'adversaire">
+        <label>Score (Toi - Adversaire)</label>
+        <input type="text" id="score" placeholder="Ex: 3 - 1">
+        <label>Résultat</label>
+        <select id="matchResult">
+          <option value="win">✅ Victoire</option>
+          <option value="loss">❌ Défaite</option>
+          <option value="draw">🤝 Nul</option>        </select>
+        <label>Capture d'écran (optionnel)</label>
+        <input type="file" id="screenshot" accept="image/*">
+        <button class="btn" id="submitResult" style="width:100%; margin-top:8px;">📤 Envoyer le Résultat</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL CHAT -->
+  <div class="modal" id="chatModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="chatTitle">💬 Chat</h3>
+        <button class="close-modal" id="closeChat">&times;</button>
+      </div>
+      <div id="chatBox" style="height:200px; overflow-y:auto; background:#0f141f; padding:8px; border-radius:8px; margin-bottom:10px; font-size:0.9rem;">
+        <div style="color:var(--muted);">Messages récents...</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="chatInput" placeholder="Tape ton message..." style="margin:0; flex:1;">
+        <button class="btn" id="sendMsg" style="padding:8px 12px;">Envoyer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">✅ Action réussie</div>
+
+  <footer>
+    eFootball Live Platform v1.0 | MVP Frontend | Données stockées localement pour test
+  </footer>
+
+  <script>
+    // ===== STATE & MOCK DATA =====
+    const state = {
+      user: JSON.parse(localStorage.getItem('ef_user')) || null,
+      stats: JSON.parse(localStorage.getItem('ef_stats')) || { wins: 0, losses: 0, draws: 0, matches: 0 },
+      tournaments: [
+        { id: 1, name: 'Weekend Cup #12', mode: '5v5', status: 'open', slots: '4/8' },
+        { id: 2, name: '1v1 Ranked Ladder', mode: '1v1', status: 'open', slots: '12/16' },
+        { id: 3, name: 'Pro Challenge', mode: '2v2', status: 'closed', slots: 'Full' }
+      ],
+      onlinePlayers: [
+        { id: 'p1', name: 'Striker_99', status: 'online', elo: 1420 },
+        { id: 'p2', name: 'GoalKeeper_X', status: 'online', elo: 1380 },
+        { id: 'p3', name: 'MidfieldKing', status: 'online', elo: 1510 },
+        { id: 'p4', name: 'DefWall_01', status: 'online', elo: 1290 }
+      ]
+    };
+
+    // ===== DOM ELEMENTS =====    const navBtns = document.querySelectorAll('.nav-btn');
+    const sections = document.querySelectorAll('.section');
+    const authBtn = document.getElementById('authBtn');
+    const userGreeting = document.getElementById('userGreeting');
+    const statsGrid = document.getElementById('statsGrid');
+    const winEl = document.getElementById('wins');
+    const lossEl = document.getElementById('losses');
+    const drawEl = document.getElementById('draws');
+    const matchEl = document.getElementById('matches');
+    const tournamentList = document.getElementById('tournamentList');
+    const playersList = document.getElementById('playersList');
+    const generateCodeBtn = document.getElementById('generateCode');
+    const codeDisplay = document.getElementById('codeDisplay');
+    const copyStatus = document.getElementById('copyStatus');
+    const submitResultBtn = document.getElementById('submitResult');
+    const resetStatsBtn = document.getElementById('resetStats');
+    const chatModal = document.getElementById('chatModal');
+    const closeChat = document.getElementById('closeChat');
+    const chatTitle = document.getElementById('chatTitle');
+    const chatBox = document.getElementById('chatBox');
+    const chatInput = document.getElementById('chatInput');
+    const sendMsg = document.getElementById('sendMsg');
+    const toast = document.getElementById('toast');
+
+    // ===== INIT =====
+    function init() {
+      updateAuthUI();
+      updateStatsUI();
+      renderTournaments();
+      renderOnlinePlayers();
+      setupNavigation();
+      setupEvents();
+    }
+
+    // ===== NAVIGATION =====
+    function setupNavigation() {
+      navBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          navBtns.forEach(b => b.classList.remove('active'));
+          sections.forEach(s => s.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById(btn.dataset.target).classList.add('active');
+        });
+      });
+    }
+
+    // ===== AUTH MOCK =====
+    function updateAuthUI() {
+      if (state.user) {
+        authBtn.textContent = '👤 ' + state.user.name;        userGreeting.textContent = `Bienvenue, ${state.user.name} ! Prêt à jouer ?`;
+      } else {
+        authBtn.textContent = 'Connexion Google';
+        userGreeting.textContent = 'Connectez-vous pour voir vos stats';
+      }
+    }
+
+    authBtn.addEventListener('click', () => {
+      if (state.user) {
+        state.user = null;
+        localStorage.removeItem('ef_user');
+        showToast('🔓 Déconnecté');
+      } else {
+        // SIMULATION GOOGLE LOGIN (remplacer par Firebase Auth plus tard)
+        state.user = { id: 'u_' + Date.now(), name: 'Joueur_' + Math.floor(Math.random()*1000) };
+        localStorage.setItem('ef_user', JSON.stringify(state.user));
+        showToast('✅ Connecté avec Google (mock)');
+      }
+      updateAuthUI();
+    });
+
+    // ===== STATS =====
+    function updateStatsUI() {
+      winEl.textContent = state.stats.wins;
+      lossEl.textContent = state.stats.losses;
+      drawEl.textContent = state.stats.draws;
+      matchEl.textContent = state.stats.matches;
+      localStorage.setItem('ef_stats', JSON.stringify(state.stats));
+    }
+
+    resetStatsBtn.addEventListener('click', () => {
+      state.stats = { wins: 0, losses: 0, draws: 0, matches: 0 };
+      updateStatsUI();
+      showToast('🔄 Stats réinitialisées');
+    });
+
+    // ===== TOURNAMENTS =====
+    function renderTournaments() {
+      tournamentList.innerHTML = state.tournaments.map(t => `
+        <div class="list-item">
+          <div>
+            <strong>${t.name}</strong><br>
+            <span style="font-size:0.8rem; color:var(--muted);">Mode: ${t.mode} | Places: ${t.slots}</span>
+          </div>
+          <button class="btn ${t.status==='closed'?'danger':'secondary'}" ${t.status==='closed'?'disabled':''}>
+            ${t.status==='open' ? '📥 S\'inscrire' : '⛔ Fermé'}
+          </button>
+        </div>
+      `).join('');
+    }
+    // ===== ONLINE PLAYERS =====
+    function renderOnlinePlayers() {
+      playersList.innerHTML = state.onlinePlayers.map(p => `
+        <div class="list-item">
+          <div><span class="status-dot"></span> <strong>${p.name}</strong> <span style="font-size:0.8rem; color:var(--muted);">(ELO: ${p.elo})</span></div>
+          <button class="btn secondary" onclick="openChat('${p.name}')">💬 Message</button>
+        </div>
+      `).join('');
+    }
+
+    // ===== CHAT MOCK =====
+    window.openChat = function(name) {
+      chatTitle.textContent = `💬 Chat avec ${name}`;
+      chatBox.innerHTML = `<div style="color:var(--muted);">Messages récents avec ${name}...</div>`;
+      chatModal.classList.add('open');
+    }
+    closeChat.addEventListener('click', () => chatModal.classList.remove('open'));
+    chatModal.addEventListener('click', e => { if(e.target===chatModal) chatModal.classList.remove('open'); });
+
+    sendMsg.addEventListener('click', () => {
+      const txt = chatInput.value.trim();
+      if(!txt) return;
+      chatBox.innerHTML += `<div style="margin:4px 0; text-align:right; background:#1c2538; padding:6px 8px; border-radius:6px; display:inline-block;">${txt}</div><br>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+      chatInput.value = '';
+      setTimeout(() => {
+        chatBox.innerHTML += `<div style="margin:4px 0; color:var(--muted);">Réponse simulée...</div><br>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 1000);
+    });
+    chatInput.addEventListener('keypress', e => { if(e.key==='Enter') sendMsg.click(); });
+
+    // ===== PLAY / CODE =====
+    generateCodeBtn.addEventListener('click', () => {
+      if(!state.user) { showToast('⚠️ Connecte-toi d\'abord !'); return; }
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = 'EFB-';
+      for(let i=0;i<4;i++) code += chars.charAt(Math.floor(Math.random()*chars.length));
+      codeDisplay.textContent = code;
+      codeDisplay.style.display = 'block';
+      copyStatus.textContent = '';
+      
+      navigator.clipboard.writeText(code).then(() => {
+        copyStatus.textContent = '✅ Code copié !';
+        showToast('📋 Code généré & copié');
+      }).catch(() => {
+        copyStatus.textContent = '👆 Clique pour copier : ' + code;
+      });
+    });
+    // ===== RESULT SUBMISSION =====
+    submitResultBtn.addEventListener('click', () => {
+      if(!state.user) { showToast('⚠️ Connecte-toi d\'abord !'); return; }
+      const opp = document.getElementById('oppName').value.trim();
+      const score = document.getElementById('score').value.trim();
+      const res = document.getElementById('matchResult').value;
+      
+      if(!opp || !score) { showToast('⚠️ Remplis tous les champs !'); return; }
+
+      state.stats.matches++;
+      if(res==='win') state.stats.wins++;
+      else if(res==='loss') state.stats.losses++;
+      else state.stats.draws++;
+
+      updateStatsUI();
+      document.getElementById('oppName').value = '';
+      document.getElementById('score').value = '';
+      document.getElementById('screenshot').value = '';
+      
+      showToast('✅ Résultat enregistré ! Stats mises à jour.');
+      // Note: Ici, tu ajouteras plus tard l'envoi vers Firebase/Supabase
+    });
+
+    // ===== TOAST =====
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function setupEvents() {
+      // Events already attached above
+    }
+
+    // ===== START =====
+    init();
+  </script>
+</body>
+</html>
