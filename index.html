@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Game Live</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <style>
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:Arial, sans-serif;
+    }
+
+    body{
+      background:#020617;
+      color:white;
+    }
+
+    header{
+      background:#111827;
+      padding:20px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-bottom:1px solid #1e293b;
+    }
+
+    .logo{
+      font-size:30px;
+      font-weight:bold;
+      color:#22c55e;
+    }
+
+    .google-btn{
+      background:white;
+      color:black;
+      border:none;
+      padding:12px 18px;
+      border-radius:10px;
+      font-weight:bold;
+      cursor:pointer;
+    }
+
+    .container{
+      padding:20px;
+    }
+
+    .welcome{
+      margin-bottom:20px;
+      font-size:22px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+      gap:20px;
+    }
+
+    .card{
+      background:#1e293b;
+      padding:20px;
+      border-radius:20px;
+      box-shadow:0 0 10px rgba(0,0,0,0.4);
+    }
+
+    .card h2{
+      color:#22c55e;
+      margin-bottom:20px;
+    }
+
+    .stats{
+      line-height:2;
+      font-size:20px;
+    }
+
+    .tournament{
+      margin-bottom:20px;
+    }
+
+    .join-btn{
+      margin-top:10px;
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      background:#f59e0b;
+      color:white;
+      font-size:18px;
+      cursor:pointer;
+    }
+
+    .player{
+      background:#334155;
+      padding:15px;
+      border-radius:12px;
+      margin-bottom:15px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .play-btn{
+      background:#3b82f6;
+      border:none;
+      padding:10px 15px;
+      border-radius:10px;
+      color:white;
+      cursor:pointer;
+    }
+
+    .hidden{
+      display:none;
+    }
+
+    .result-box{
+      margin-top:20px;
+      background:#0f172a;
+      padding:15px;
+      border-radius:10px;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      margin-top:10px;
+      border:none;
+      border-radius:10px;
+      font-size:16px;
+    }
+
+    .save-btn{
+      margin-top:15px;
+      width:100%;
+      padding:12px;
+      background:#22c55e;
+      border:none;
+      color:white;
+      border-radius:10px;
+      font-size:18px;
+      cursor:pointer;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<header>
+
+  <div class="logo">GAME LIVE</div>
+
+  <button class="google-btn" onclick="googleLogin()">
+    Connexion Google
+  </button>
+
+</header>
+
+<div class="container">
+
+  <div class="welcome" id="welcome">
+    Bienvenue joueur
+  </div>
+
+  <div class="grid">
+
+    <!-- Profil -->
+    <div class="card">
+
+      <h2>Profil Joueur</h2>
+
+      <div class="stats">
+        🏆 Victoires : <span id="wins">0</span><br>
+        ❌ Défaites : <span id="losses">0</span><br>
+        🤝 Match nul : <span id="draws">0</span><br>
+        ⭐ Rang : #<span id="rank">999</span>
+      </div>
+
+    </div>
+
+    <!-- Tournois -->
+    <div class="card">
+
+      <h2>Tournois</h2>
+
+      <div class="tournament">
+        Coupe mondiale eFootball
+        <button class="join-btn">
+          Rejoindre
+        </button>
+      </div>
+
+      <div class="tournament">
+        Champion League Mobile
+        <button class="join-btn">
+          Rejoindre
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Joueurs -->
+    <div class="card">
+
+      <h2>Joueurs en ligne</h2>
+
+      <div class="player">
+        <span>🟢 AlexPro</span>
+        <button class="play-btn" onclick="startMatch('AlexPro')">
+          Jouer
+        </button>
+      </div>
+
+      <div class="player">
+        <span>🟢 MessiKing</span>
+        <button class="play-btn" onclick="startMatch('MessiKing')">
+          Jouer
+        </button>
+      </div>
+
+      <div class="player">
+        <span>🟢 Shadow99</span>
+        <button class="play-btn" onclick="startMatch('Shadow99')">
+          Jouer
+        </button>
+      </div>
+
+      <div class="result-box hidden" id="resultBox">
+
+        <h3>Résultat du Match</h3>
+
+        <input type="number" id="myScore" placeholder="Ton score">
+
+        <input type="number" id="enemyScore" placeholder="Score adversaire">
+
+        <button class="save-btn" onclick="saveResult()">
+          Valider le match
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+  // CONFIG FIREBASE
+  // Remplace par tes vraies clés Firebase
+
+  const firebaseConfig = {
+
+    apiKey: "TON_API_KEY",
+
+    authDomain: "TON_PROJET.firebaseapp.com",
+
+    projectId: "TON_PROJET",
+
+    storageBucket: "TON_PROJET.appspot.com",
+
+    messagingSenderId: "123456789",
+
+    appId: "APP_ID"
+
+  };
+
+  firebase.initializeApp(firebaseConfig);
+
+  const auth = firebase.auth();
+
+  const db = firebase.firestore();
+
+  let currentUser = null;
+
+  // LOGIN GOOGLE
+
+  async function googleLogin(){
+
+    const provider = new firebase.auth.GoogleAuthProvider();
+
+    try{
+
+      const result = await auth.signInWithPopup(provider);
+
+      currentUser = result.user;
+
+      document.getElementById("welcome").innerHTML =
+        "Bienvenue " + currentUser.displayName;
+
+      loadPlayer();
+
+    }catch(error){
+
+      alert(error.message);
+
+    }
+
+  }
+
+  // CHARGER JOUEUR
+
+  async function loadPlayer(){
+
+    const ref = db.collection("players").doc(currentUser.uid);
+
+    const doc = await ref.get();
+
+    if(!doc.exists){
+
+      await ref.set({
+
+        wins:0,
+        losses:0,
+        draws:0,
+        rank:999
+
+      });
+
+    }
+
+    const data = (await ref.get()).data();
+
+    document.getElementById("wins").innerText = data.wins;
+    document.getElementById("losses").innerText = data.losses;
+    document.getElementById("draws").innerText = data.draws;
+    document.getElementById("rank").innerText = data.rank;
+
+  }
+
+  // MATCH
+
+  function startMatch(player){
+
+    alert(
+      "Code du salon envoyé contre " + player +
+      "\\n\\nLance maintenant eFootball"
+    );
+
+    document.getElementById("resultBox")
+    .classList.remove("hidden");
+
+  }
+
+  // SAUVEGARDER RESULTAT
+
+  async function saveResult(){
+
+    if(!currentUser){
+
+      alert("Connecte-toi d'abord");
+
+      return;
+    }
+
+    let myScore =
+      parseInt(document.getElementById("myScore").value);
+
+    let enemyScore =
+      parseInt(document.getElementById("enemyScore").value);
+
+    const ref =
+      db.collection("players").doc(currentUser.uid);
+
+    const doc = await ref.get();
+
+    let data = doc.data();
+
+    if(myScore > enemyScore){
+
+      data.wins++;
+
+    }else if(myScore < enemyScore){
+
+      data.losses++;
+
+    }else{
+
+      data.draws++;
+
+    }
+
+    await ref.update(data);
+
+    document.getElementById("wins").innerText = data.wins;
+    document.getElementById("losses").innerText = data.losses;
+    document.getElementById("draws").innerText = data.draws;
+
+    alert("Résultat enregistré !");
+
+  }
+
+</script>
+
+</body>
+</html>
