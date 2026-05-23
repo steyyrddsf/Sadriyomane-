@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🌟 Attrape les Étoiles 🌟</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+            font-family: Arial, sans-serif;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #player {
+            width: 80px;
+            height: 40px;
+            background: linear-gradient(to bottom, #ff6b6b, #ee5a5a);
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.5);
+        }
+
+        .star {
+            width: 30px;
+            height: 30px;
+            background-color: #ffd700;
+            position: absolute;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #ffd700;
+            font-size: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #score-board {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px black;        }
+
+        #lives-board {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px black;
+        }
+
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        #game-over button {
+            background: #ff6b6b;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        #game-over button:hover {
+            background: #ee5a5a;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="score-board">⭐ Score: <span id="score">0</span></div>
+        <div id="lives-board">❤️ Vies: <span id="lives">3</span></div>
+        <div id="player"></div>
+        <div id="game-over">
+            <h1>💔 GAME OVER 💔</h1>
+            <p>Score final: <span id="final-score">0</span></p>
+            <button onclick="restartGame()">🔄 Rejouer</button>        </div>
+    </div>
+
+    <script>
+        // --- VARIABLES DU JEU ---
+        const player = document.getElementById('player');
+        const gameContainer = document.getElementById('game-container');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreElement = document.getElementById('final-score');
+
+        let score = 0;
+        let lives = 3;
+        let playerX = window.innerWidth / 2;
+        let gameActive = true;
+        let starSpeed = 3;
+        let stars = [];
+
+        // --- CONTRÔLES DU JOUEUR ---
+        document.addEventListener('mousemove', (e) => {
+            if (gameActive) {
+                playerX = e.clientX;
+                player.style.left = playerX + 'px';
+            }
+        });
+
+        // --- CRÉER UNE ÉTOILE ---
+        function createStar() {
+            if (!gameActive) return;
+
+            const star = document.createElement('div');
+            star.classList.add('star');
+            star.innerHTML = '⭐';
+            star.style.left = Math.random() * (window.innerWidth - 30) + 'px';
+            star.style.top = '0px';
+            gameContainer.appendChild(star);
+            stars.push({ element: star, y: 0 });
+        }
+
+        // --- FAIRE TOMBER LES ÉTOILES ---
+        function updateStars() {
+            if (!gameActive) return;
+
+            stars.forEach((starObj, index) => {
+                starObj.y += starSpeed;
+                starObj.element.style.top = starObj.y + 'px';
+
+                // Vérifier si attrapé
+                const playerRect = player.getBoundingClientRect();                const starRect = starObj.element.getBoundingClientRect();
+
+                if (
+                    starRect.bottom >= playerRect.top &&
+                    starRect.top <= playerRect.bottom &&
+                    starRect.right >= playerRect.left &&
+                    starRect.left <= playerRect.right
+                ) {
+                    // Étoile attrapée !
+                    score += 10;
+                    scoreElement.textContent = score;
+                    starObj.element.remove();
+                    stars.splice(index, 1);
+                    
+                    // Augmenter la difficulté
+                    if (score % 50 === 0) starSpeed += 1;
+                }
+
+                // Vérifier si ratée (sortie de l'écran)
+                if (starObj.y > window.innerHeight) {
+                    lives--;
+                    livesElement.textContent = lives;
+                    starObj.element.remove();
+                    stars.splice(index, 1);
+
+                    if (lives <= 0) {
+                        endGame();
+                    }
+                }
+            });
+
+            requestAnimationFrame(updateStars);
+        }
+
+        // --- FIN DU JEU ---
+        function endGame() {
+            gameActive = false;
+            gameOverScreen.style.display = 'block';
+            finalScoreElement.textContent = score;
+        }
+
+        // --- RECOMMENCER ---
+        function restartGame() {
+            score = 0;
+            lives = 3;
+            starSpeed = 3;
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            gameOverScreen.style.display = 'none';
+            gameActive = true;
+            // Supprimer toutes les étoiles restantes
+            stars.forEach(starObj => starObj.element.remove());
+            stars = [];
+
+            updateStars();
+        }
+
+        // --- LANCER LE JEU ---
+        setInterval(createStar, 1000); // Une étoile chaque seconde
+        updateStars();
+    </script>
+
+</body>
+</html>
