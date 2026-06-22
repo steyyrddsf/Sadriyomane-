@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeu du Serpent 🐍</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    padding: 10px;
+  }
+  h1 { margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+  #score {
+    font-size: 22px;
+    margin-bottom: 10px;
+    background: rgba(0,0,0,0.3);
+    padding: 8px 20px;
+    border-radius: 20px;
+  }
+  canvas {
+    background: #0f2027;
+    border: 4px solid #4caf50;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+    max-width: 100%;
+    touch-action: none;
+  }
+  #controls {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 70px);
+    grid-template-rows: repeat(3, 70px);
+    gap: 8px;
+  }
+  .btn {
+    background: linear-gradient(145deg, #4caf50, #388e3c);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #1b5e20, 0 6px 10px rgba(0,0,0,0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 #1b5e20, 0 2px 5px rgba(0,0,0,0.3);
+  }
+  #btnUp    { grid-column: 2; grid-row: 1; }
+  #btnLeft  { grid-column: 1; grid-row: 2; }
+  #btnDown  { grid-column: 2; grid-row: 2; }
+  #btnRight { grid-column: 3; grid-row: 2; }
+  #btnPause { grid-column: 2; grid-row: 3; font-size: 18px; }
+
+  /* ===== MENU DE DÉMARRAGE ===== */
+  #menu {
+    background: rgba(0,0,0,0.85);
+    padding: 30px 40px;
+    border-radius: 20px;
+    text-align: center;
+    border: 3px solid #4caf50;
+    box-shadow: 0 0 30px rgba(76, 175, 80, 0.6);
+    max-width: 90%;
+  }
+  #menu h2 {
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: #81c784;
+  }
+  #menu p {
+    margin-bottom: 20px;
+    opacity: 0.8;
+    font-size: 14px;
+  }
+  .difficulty-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .diff-btn {
+    padding: 15px 10px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    color: white;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.3), 0 6px 10px rgba(0,0,0,0.3);
+  }
+  .diff-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+  }
+  .diff-btn small { display: block; font-size: 11px; font-weight: normal; margin-top: 4px; opacity: 0.9; }
+  #easy   { background: linear-gradient(145deg, #66bb6a, #388e3c); }
+  #medium { background: linear-gradient(145deg, #42a5f5, #1976d2); }
+  #hard   { background: linear-gradient(145deg, #ffa726, #ef6c00); }
+  #ultra  { background: linear-gradient(145deg, #ef5350, #b71c1c); }
+
+  /* ===== GAME OVER ===== */
+  #gameOver {
+    position: absolute;
+    background: rgba(0,0,0,0.9);
+    padding: 30px 40px;
+    border-radius: 15px;
+    text-align: center;
+    display: none;
+    border: 3px solid #f44336;
+  }
+  #gameOver h2 { color: #f44336; margin-bottom: 15px; }
+  #gameOver button {
+    margin: 8px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  #replayBtn { background: #4caf50; }
+  #menuBtn   { background: #2196f3; }
+</style>
+</head>
+<body>
+  <h1>🐍 Jeu du Serpent</h1>
+  <div id="score">Score : 0</div>
+  <canvas id="game" width="400" height="400"></canvas>
+
+  <div id="controls">
+    <button class="btn" id="btnUp">▲</button>
+    <button class="btn" id="btnLeft">◀</button>
+    <button class="btn" id="btnDown">▼</button>
+    <button class="btn" id="btnRight">▶</button>
+    <button class="btn" id="btnPause">⏸</button>
+  </div>
+
+  <!-- MENU DE DÉPART -->
+  <div id="menu">
+    <h2>🎮 Choisis ta difficulté</h2>
+    <p>La vitesse du serpent dépend du niveau choisi</p>
+    <div class="difficulty-grid">
+      <button class="diff-btn" id="easy">🌱 Facile<small>200 ms</small></button>
+      <button class="diff-btn" id="medium">⚡ Moyen<small>120 ms</small></button>
+      <button class="diff-btn" id="hard">🔥 Difficile<small>80 ms</small></button>
+      <button class="diff-btn" id="ultra">💀 Ultra<small>50 ms</small></button>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="gameOver">
+    <h2>Game Over !</h2>
+    <p id="finalScore">Score final : 0</p>
+    <p id="diffDisplay" style="margin-top:5px; opacity:0.8;"></p>
+    <button id="replayBtn" onclick="restart()">🔁 Rejouer</button>
+    <button id="menuBtn" onclick="backToMenu()">🏠 Menu</button>
+  </div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const gameOverEl = document.getElementById('gameOver');
+const finalScoreEl = document.getElementById('finalScore');
+const diffDisplayEl = document.getElementById('diffDisplay');
+const menuEl = document.getElementById('menu');
+
+const box = 20;
+const cols = canvas.width / box;
+const rows = canvas.height / box;
+
+// Vitesses par difficulté (en millisecondes)
+const SPEEDS = {
+  easy:   200,
+  medium: 120,
+  hard:   80,
+  ultra:  50
+};
+const LABELS = {
+  easy:   '🌱 Facile',
+  medium: '⚡ Moyen',
+  hard:   '🔥 Difficile',
+  ultra:  '💀 Ultra difficile'
+};
+
+let snake, food, direction, nextDirection, score, gameLoop, paused;
+let currentDifficulty = 'medium';
+let currentSpeed = SPEEDS.medium;
+
+function showMenu() {
+  menuEl.style.display = 'block';
+  gameOverEl.style.display = 'none';
+  if (gameLoop) clearInterval(gameLoop);
+  // Effacer le canvas
+  ctx.fillStyle = '#0f2027';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  scoreEl.textContent = 'Score : 0';
+}
+
+function startGame(difficulty) {
+  currentDifficulty = difficulty;
+  currentSpeed = SPEEDS[difficulty];
+  menuEl.style.display = 'none';
+  gameOverEl.style.display = 'none';
+  init();
+}
+
+function init() {
+  snake = [{x: 9*box, y: 10*box}, {x: 8*box, y: 10*box}, {x: 7*box, y: 10*box}];
+  direction = 'RIGHT';
+  nextDirection = 'RIGHT';
+  score = 0;
+  paused = false;
+  placeFood();
+  scoreEl.textContent = 'Score : 0';
+  if (gameLoop) clearInterval(gameLoop);
+  gameLoop = setInterval(draw, currentSpeed);
+}
+
+function placeFood() {
+  food = {
+    x: Math.floor(Math.random() * cols) * box,
+    y: Math.floor(Math.random() * rows) * box
+  };
+  for (let s of snake) {
+    if (s.x === food.x && s.y === food.y) return placeFood();
+  }
+}
+
+function draw() {
+  if (paused) return;
+
+  ctx.fillStyle = '#0f2027';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+      if ((i+j) % 2 === 0) ctx.fillRect(i*box, j*box, box, box);
+    }
+  }
+
+  // pomme
+  ctx.fillStyle = '#f44336';
+  ctx.beginPath();
+  ctx.arc(food.x + box/2, food.y + box/2, box/2 - 2, 0, Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle = '#4caf50';
+  ctx.fillRect(food.x + box/2 - 1, food.y + 2, 2, 4);
+
+  // serpent
+  snake.forEach((seg, i) => {
+    ctx.fillStyle = i === 0 ? '#81c784' : '#4caf50';
+    ctx.fillRect(seg.x + 1, seg.y + 1, box - 2, box - 2);
+    if (i === 0) {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(seg.x + 4, seg.y + 4, 4, 4);
+      ctx.fillRect(seg.x + 12, seg.y + 4, 4, 4);
+    }
+  });
+
+  direction = nextDirection;
+  let head = {x: snake[0].x, y: snake[0].y};
+  if (direction === 'LEFT')   head.x -= box;
+  if (direction === 'RIGHT')  head.x += box;
+  if (direction === 'UP')     head.y -= box;
+  if (direction === 'DOWN')   head.y += box;
+
+  if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+    return endGame();
+  }
+  for (let s of snake) {
+    if (s.x === head.x && s.y === head.y) return endGame();
+  }
+
+  if (head.x === food.x && head.y === food.y) {
+    score++;
+    scoreEl.textContent = 'Score : ' + score;
+    placeFood();
+  } else {
+    snake.pop();
+  }
+  snake.unshift(head);
+}
+
+function endGame() {
+  clearInterval(gameLoop);
+  finalScoreEl.textContent = 'Score final : ' + score;
+  diffDisplayEl.textContent = 'Difficulté : ' + LABELS[currentDifficulty];
+  gameOverEl.style.display = 'block';
+}
+
+function restart() {
+  gameOverEl.style.display = 'none';
+  init();
+}
+
+function backToMenu() {
+  showMenu();
+}
+
+function changeDir(dir) {
+  const opposites = {LEFT:'RIGHT', RIGHT:'LEFT', UP:'DOWN', DOWN:'UP'};
+  if (dir !== opposites[direction]) nextDirection = dir;
+}
+
+// Boutons tactiles
+document.getElementById('btnUp').addEventListener('click',    () => changeDir('UP'));
+document.getElementById('btnDown').addEventListener('click',  () => changeDir('DOWN'));
+document.getElementById('btnLeft').addEventListener('click',  () => changeDir('LEFT'));
+document.getElementById('btnRight').addEventListener('click', () => changeDir('RIGHT'));
+document.getElementById('btnPause').addEventListener('click', () => {
+  paused = !paused;
+  document.getElementById('btnPause').textContent = paused ? '▶' : '⏸';
+});
+
+// Boutons de difficulté
+document.getElementById('easy').addEventListener('click',   () => startGame('easy'));
+document.getElementById('medium').addEventListener('click', () => startGame('medium'));
+document.getElementById('hard').addEventListener('click',   () => startGame('hard'));
+document.getElementById('ultra').addEventListener('click',  () => startGame('ultra'));
+
+// Clavier
+document.addEventListener('keydown', e => {
+  const keys = {ArrowUp:'UP', ArrowDown:'DOWN', ArrowLeft:'LEFT', ArrowRight:'RIGHT'};
+  if (keys[e.key]) { e.preventDefault(); changeDir(keys[e.key]); }
+});
+
+// Affichage du menu au démarrage
+showMenu();
+</script>
+</body>
+</html>
