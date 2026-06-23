@@ -1,0 +1,8 @@
+let secret = 7;
+let choix = 7;
+
+if(choix === secret){
+    console.log("Bravo !");
+}else{
+    console.log("Perdu");
+}
